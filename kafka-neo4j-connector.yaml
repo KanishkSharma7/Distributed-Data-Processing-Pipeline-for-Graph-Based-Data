@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-neo4j-connector
+  namespace: default
+  labels:
+    app: kafka-neo4j-connector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-neo4j-connector
+  template:
+    metadata:
+      labels:
+        app: kafka-neo4j-connector
+    spec:
+      containers:
+        - name: kafka-neo4j-connector
+          image: veedata/kafka-neo4j-connect:latest2  
+          ports:
+            - containerPort: 8083  
+          env:  
+            - name: CONNECT_REST_ADVERTISED_HOST_NAME
+              value: "kafka-neo4j-connector"
+            - name: CONNECT_BOOTSTRAP_SERVERS
+              value: "kafka-service:29092"  
+            - name: CONNECT_REST_PORT
+              value: "8083"  
+            - name: CONNECT_GROUP_ID
+              value: "neo4j-sink-connector"  
+            - name: CONNECT_CONFIG_STORAGE_TOPIC
+              value: "_connect-configs"
+            - name: CONNECT_OFFSET_STORAGE_TOPIC
+              value: "_connect-offsets"
+            - name: CONNECT_STATUS_STORAGE_TOPIC
+              value: "_connect-status"
+            - name: CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
+              value: "1"
+            - name: CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR
+              value: "1"
+            - name: CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
+              value: "1"
+            - name: CONNECT_CONFIG_STORAGE_PARTITIONS
+              value: "1"
+            - name: CONNECT_OFFSET_STORAGE_PARTITIONS
+              value: "1"
+            - name: CONNECT_STATUS_STORAGE_PARTITIONS
+              value: "1"
+            - name: CONNECT_KEY_CONVERTER
+              value: "org.apache.kafka.connect.json.JsonConverter"
+            - name: CONNECT_VALUE_CONVERTER
+              value: "io.confluent.connect.avro.AvroConverter"
+            - name: CONNECT_PLUGIN_PATH
+              value: "/usr/share/confluent-hub-components"
+            - name: CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL
+              value: "http://schema-registry:8081"
+            - name: CONNECT_NEO4J_SERVER_URI
+              value: "bolt://neo4j-service:7687"
+            - name: CONNECT_NEO4J_AUTHENTICATION_BASIC_USERNAME
+              value: "neo4j"
+            - name: CONNECT_NEO4J_AUTHENTICATION_BASIC_PASSWORD
+              value: "project1phase2"  
+          resources:  
+            requests:
+              memory: "2Gi"  
+              cpu: "1"      
+            limits:
+              memory: "2Gi"  
+              cpu: "2"      
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-connect
+spec:
+  selector:
+    app: kafka-neo4j-connector
+  ports:
+  - protocol: TCP
+    port: 8083
+    targetPort: 8083
