@@ -22,7 +22,6 @@ class Interface:
 
     def bfs(self, start_node, last_node):
         with self._driver.session() as session:
-
             self.dropGraphIfExists('taxiGraph')
 
             # Create an in-memory graph projecting all nodes and relationships
@@ -37,58 +36,24 @@ class Interface:
                 )
             """)
 
-            # Get the internal node IDs for the start_node and last_node
-            start_node_id_result = session.run("""
-                MATCH (n) WHERE toString(n.name) = toString($start_node)
-                RETURN id(n) AS nodeId
-            """, start_node=start_node)
-            start_node_record = start_node_id_result.single()
-            if not start_node_record:
-                raise ValueError(f"Start node with ID {start_node} does not exist in the graph.")
-            start_node_id = start_node_record["nodeId"]
-
-            last_node_id_result = session.run("""
-                MATCH (n) WHERE toString(n.name) = toString($last_node)
-                RETURN id(n) AS nodeId
-            """, last_node=last_node)
-            last_node_record = last_node_id_result.single()
-            if not last_node_record:
-                raise ValueError(f"Last node with ID {last_node} does not exist in the graph.")
-            last_node_id = last_node_record["nodeId"]
-
             # Perform BFS
-            bfs_result = session.run("""
+            bfsResult = session.run("""
+                MATCH (source) WHERE source.name = $start_node
+                MATCH (target) WHERE target.name = $last_node
                 CALL gds.bfs.stream('taxiGraph', {
-                    sourceNode: $start_node_id,
-                    targetNodes: [$last_node_id],
-                    concurrency: 4
+                    sourceNode: source,
+                    targetNodes: [target]
                 })
-                YIELD nodeIds
-                RETURN nodeIds
-            """, start_node_id=start_node_id, last_node_id=last_node_id)
+                YIELD path
+                RETURN [n IN nodes(path) | n.name] AS nodeNames
+            """, start_node=int(start_node), last_node=int(last_node))
 
-            # Extract the node IDs from the result
-            record = bfs_result.single()
+            record = bfsResult.single()
             if not record:
                 raise Exception("BFS traversal did not return any results.")
 
-            node_ids = record['nodeIds']
-
-            # Get the traversal
-            path = []
-            for node_id in node_ids:
-                node_name_result = session.run("""
-                    MATCH (n) WHERE id(n) = $node_id
-                    RETURN n.name AS name
-                """, node_id=node_id)
-                node_name_record = node_name_result.single()
-                if node_name_record is None:
-                    raise Exception(f"Node with id {node_id} not found")
-                node_name = node_name_record['name']
-                path.append({'name': int(node_name)})
-
+            path = [{'name': int(node_name)} for node_name in record['nodeNames']]
             return [{'path': path}]
-
 
     def pagerank(self, max_iterations, weight_property):
         with self._driver.session() as session:
