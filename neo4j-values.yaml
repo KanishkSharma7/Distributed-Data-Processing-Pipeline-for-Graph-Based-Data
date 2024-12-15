@@ -1,0 +1,28 @@
+neo4j:
+  name: neo4j-standalone
+  password: "project1phase2"
+  acceptLicenseAgreement: "yes"  
+  edition: community  
+  resources:
+    cpu: "2"  
+    memory: "4Gi"  
+
+volumes:
+  data:
+    mode: defaultStorageClass  
+    defaultStorageClass:
+      requests:
+        storage: 4Gi  
+
+env:
+  NEO4J_PLUGINS: '["graph-data-science"]'  
+
+config:
+  server.default_listen_address: "0.0.0.0"
+  server.bolt.listen_address: "0.0.0.0:7687"
+  server.http.listen_address: "0.0.0.0:7474"
+  dbms.security.procedures.unrestricted: "gds.*,gds.util.asNode,apoc.*"
+  dbms.security.procedures.allowlist: "gds.*,gds.util.asNode,apoc.*"
+  server.bolt.enabled: "true"
+  server.http.enabled: "true"
+  dbms.connector.bolt.tls_level: "DISABLED"
