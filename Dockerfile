@@ -5,8 +5,8 @@ FROM ubuntu:22.04
 # https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
 ARG TARGETPLATFORM=linux/amd64,linux/arm64
 ARG DEBIAN_FRONTEND=noninteractive
-ARG GITHUB_USERNAME=KanishkSharma7
-ARG GITHUB_TOKEN=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
+ARG GITHUB_USERNAME=GithubUsernameHere
+ARG GITHUB_TOKEN=GithubTokenHere
 
 # neo4j 5.5.0 installation and some cleanup
 RUN apt-get update && \
